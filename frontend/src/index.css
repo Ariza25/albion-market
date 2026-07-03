@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════
+   Albion Market — Global Design System
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  /* Color Palette */
+  --bg-base: #0d0e12;
+  --bg-surface: #13151c;
+  --bg-card: #1a1d28;
+  --bg-elevated: #21253a;
+  --bg-hover: #272b3f;
+
+  --border: #2a2f47;
+  --border-subtle: #1e2235;
+
+  --gold: #f0a500;
+  --gold-light: #ffc13d;
+  --gold-dim: rgba(240, 165, 0, 0.15);
+  --gold-glow: rgba(240, 165, 0, 0.3);
+
+  --text-primary: #e8eaf0;
+  --text-secondary: #8b92b4;
+  --text-muted: #545878;
+  --text-gold: #f0a500;
+
+  --green: #22c55e;
+  --green-dim: rgba(34, 197, 94, 0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239, 68, 68, 0.12);
+  --blue: #3b82f6;
+  --purple: #a855f7;
+
+  /* City Colors */
+  --city-caerleon: #e74c3c;
+  --city-bridgewatch: #e67e22;
+  --city-lymhurst: #27ae60;
+  --city-fort-sterling: #95a5a6;
+  --city-thetford: #8e44ad;
+  --city-martlock: #2980b9;
+  --city-brecilien: #16a085;
+
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 0 20px rgba(240, 165, 0, 0.2);
+}
+
+/* Reset */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Selection */
+::selection { background: var(--gold-dim); color: var(--gold); }

@@ -1,0 +1,30 @@
+.widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon {
+  color: var(--text-secondary);
+}
+
+.label {
+  color: var(--text-secondary);
+}
+
+.goldIcon {
+  color: var(--gold);
+}
+
+.value {
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
