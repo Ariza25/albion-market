@@ -14,6 +14,9 @@ export type OpportunityRow = {
   sell_city: string;
   buy_price: number;
   sell_price: number;
+  tax_rate: number;
+  tax: number;
+  net_revenue: number;
   profit: number;
   roi: number;
   confidence: 'high' | 'medium' | 'low' | 'none' | string;

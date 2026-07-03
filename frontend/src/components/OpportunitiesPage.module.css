@@ -47,7 +47,7 @@
 .filters {
   display: grid;
   gap: 14px;
-  grid-template-columns: 1fr 180px;
+  grid-template-columns: 1fr 180px 180px;
 }
 
 .field,
@@ -105,6 +105,24 @@
 }
 
 .checks input {
+  accent-color: var(--gold);
+}
+
+.inlineCheck {
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.inlineCheck input {
   accent-color: var(--gold);
 }
 

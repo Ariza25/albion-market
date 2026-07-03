@@ -6,10 +6,12 @@ type Props = {
   cities: string[];
   qualities: number[];
   minProfit: number;
+  premium: boolean;
   onItemsTextChange: (value: string) => void;
   onCitiesChange: (value: string[]) => void;
   onQualitiesChange: (value: number[]) => void;
   onMinProfitChange: (value: number) => void;
+  onPremiumChange: (value: boolean) => void;
 };
 
 export default function OpportunitiesFilters({
@@ -17,10 +19,12 @@ export default function OpportunitiesFilters({
   cities,
   qualities,
   minProfit,
+  premium,
   onItemsTextChange,
   onCitiesChange,
   onQualitiesChange,
   onMinProfitChange,
+  onPremiumChange,
 }: Props) {
   return (
     <>
@@ -37,11 +41,18 @@ export default function OpportunitiesFilters({
             onChange={(event) => onMinProfitChange(Math.max(0, Number(event.target.value) || 0))}
           />
         </label>
+        <div className={styles.field}>
+          <span>Taxa de venda</span>
+          <label className={styles.inlineCheck}>
+            <input type="checkbox" checked={premium} onChange={(event) => onPremiumChange(event.target.checked)} />
+            Premium ativo ({premium ? '4%' : '8%'})
+          </label>
+        </div>
       </div>
 
       <div className={styles.checkGrid}>
         <CheckboxGroup
-          title="Cidades"
+          title="Comprar/craftar em"
           values={CITY_IDS}
           selected={cities}
           labelFor={(city) => city}

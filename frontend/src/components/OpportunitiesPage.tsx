@@ -19,6 +19,7 @@ export default function OpportunitiesPage({ server }: Props) {
   const [cities, setCities] = useState<string[]>(CITY_IDS);
   const [qualities, setQualities] = useState<number[]>([1]);
   const [minProfit, setMinProfit] = useState(0);
+  const [premium, setPremium] = useState(true);
   const [rows, setRows] = useState<OpportunityRow[]>([]);
   const [dataQuality, setDataQuality] = useState<DataQualitySummaryType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function OpportunitiesPage({ server }: Props) {
     setLoading(true);
     setError('');
     try {
-      const response = await getMarketOpportunities(items, cities, qualities, server, minProfit);
+      const response = await getMarketOpportunities(items, cities, qualities, server, minProfit, premium);
       setRows(response.opportunities || []);
       setDataQuality(response.data_quality || null);
     } catch (err: any) {
@@ -49,8 +50,8 @@ export default function OpportunitiesPage({ server }: Props) {
     <section className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h2><TrendingUp size={18} /> Oportunidades de mercado</h2>
-          <p>Ranking baseado em snapshot consistente de precos, lucro liquido 4% e confianca dos dados.</p>
+          <h2><TrendingUp size={18} /> Black Market</h2>
+          <p>Compare compra nas cidades selecionadas contra venda no Black Market com taxa de {premium ? '4%' : '8%'}.</p>
         </div>
         <button className={styles.primaryBtn} onClick={runSearch} disabled={loading}>
           <RefreshCw size={15} className={loading ? styles.spin : ''} />
@@ -63,10 +64,12 @@ export default function OpportunitiesPage({ server }: Props) {
         cities={cities}
         qualities={qualities}
         minProfit={minProfit}
+        premium={premium}
         onItemsTextChange={setItemsText}
         onCitiesChange={setCities}
         onQualitiesChange={setQualities}
         onMinProfitChange={setMinProfit}
+        onPremiumChange={setPremium}
       />
 
       <DataQualitySummary dataQuality={dataQuality} />

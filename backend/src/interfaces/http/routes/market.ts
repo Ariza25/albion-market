@@ -19,6 +19,11 @@ function parseItems(itemsQuery) {
   return [...new Set(itemsQuery.split(',').map((i) => i.trim().toUpperCase()).filter(Boolean))];
 }
 
+function parseBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  return value === true || value === 'true' || value === '1';
+}
+
 router.get('/snapshot', async (req, res) => {
   try {
     const items = parseItems(req.query.items);
@@ -54,18 +59,25 @@ router.get('/opportunities', async (req, res) => {
     if (items.length === 0) return res.status(400).json({ error: 'items e obrigatorio. Ex: ?items=T4_BAG,T5_BAG' });
     if (items.length > 120) return res.status(400).json({ error: 'Maximo de 120 itens por consulta.' });
 
-    const locations = parseLocations(req.query.locations, config.defaultLocations);
+    const buyLocations = parseLocations(req.query.locations, config.defaultLocations);
+    const locations = [...new Set([...buyLocations, 'Black Market'])];
     const qualities = parseQualities(req.query.qualities);
     const server = req.query.server;
     const minProfit = Number(req.query.min_profit || 0);
+    const premium = parseBoolean(req.query.premium, true);
+    const taxRate = premium ? 0.04 : 0.08;
     const prices = await getPrices(items, { locations, qualities, server });
-    const opportunities = buildTradeOpportunities(prices, minProfit);
+    const opportunities = buildBlackMarketOpportunities(prices, { minProfit, taxRate, buyLocations });
 
     return res.json({
       generated_at: new Date().toISOString(),
       server: server || config.server,
+      mode: 'black_market',
+      premium,
+      tax_rate: taxRate,
       items,
-      locations,
+      buy_locations: buyLocations,
+      sell_location: 'Black Market',
       qualities,
       opportunities,
       data_quality: summarizePriceQuality(prices),
@@ -76,7 +88,7 @@ router.get('/opportunities', async (req, res) => {
   }
 });
 
-function buildTradeOpportunities(prices, minProfit) {
+function buildBlackMarketOpportunities(prices, { minProfit, taxRate, buyLocations }) {
   const byItemQuality = new Map();
   for (const entry of prices) {
     const key = `${entry.item_id}-${entry.quality}`;
@@ -86,14 +98,15 @@ function buildTradeOpportunities(prices, minProfit) {
 
   const rows = [];
   for (const entries of byItemQuality.values()) {
-    const buys = entries.filter((entry) => entry.sell_price_min > 0);
-    const sells = entries.filter((entry) => entry.buy_price_max > 0 || entry.sell_price_min > 0);
+    const buys = entries.filter((entry) => buyLocations.includes(entry.city) && entry.sell_price_min > 0);
+    const sells = entries.filter((entry) => entry.city === 'Black Market' && (entry.buy_price_max > 0 || entry.sell_price_min > 0));
     const cheapest = buys.sort((a, b) => a.sell_price_min - b.sell_price_min)[0];
     const bestSell = sells.sort((a, b) => bestExitPrice(b) - bestExitPrice(a))[0];
-    if (!cheapest || !bestSell || cheapest.city === bestSell.city) continue;
+    if (!cheapest || !bestSell) continue;
 
     const exitPrice = bestExitPrice(bestSell);
-    const netRevenue = Math.round(exitPrice * 0.96);
+    const tax = Math.round(exitPrice * taxRate);
+    const netRevenue = exitPrice - tax;
     const profit = netRevenue - cheapest.sell_price_min;
     if (profit < minProfit) continue;
 
@@ -105,6 +118,8 @@ function buildTradeOpportunities(prices, minProfit) {
       sell_city: bestSell.city,
       buy_price: cheapest.sell_price_min,
       sell_price: exitPrice,
+      tax_rate: taxRate,
+      tax,
       net_revenue: netRevenue,
       profit,
       roi: cheapest.sell_price_min > 0 ? (profit / cheapest.sell_price_min) * 100 : 0,

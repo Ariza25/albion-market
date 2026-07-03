@@ -33,7 +33,7 @@ export default function PageTabs({ activeTab, onChange }: PageTabsProps) {
         onClick={() => onChange('opportunities')}
       >
         <Radar size={16} />
-        Oportunidades
+        Black Market
       </button>
     </div>
   );

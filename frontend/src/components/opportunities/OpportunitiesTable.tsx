@@ -20,6 +20,8 @@ export default function OpportunitiesTable({ rows, loading }: Props) {
             <th>Vender</th>
             <th>Entrada</th>
             <th>Saida</th>
+            <th>Taxa</th>
+            <th>Liquido</th>
             <th>Lucro</th>
             <th>ROI</th>
             <th>Confianca</th>
@@ -29,14 +31,14 @@ export default function OpportunitiesTable({ rows, loading }: Props) {
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={10} className={styles.empty}>
+              <td colSpan={12} className={styles.empty}>
                 <RefreshCw className={styles.spin} /> Buscando oportunidades...
               </td>
             </tr>
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={10} className={styles.empty}>
-                <Search size={18} /> Nenhuma oportunidade calculada ainda.
+              <td colSpan={12} className={styles.empty}>
+                <Search size={18} /> Nenhuma oportunidade de Black Market calculada ainda.
               </td>
             </tr>
           ) : (
@@ -48,6 +50,8 @@ export default function OpportunitiesTable({ rows, loading }: Props) {
                 <td><CityBadge city={row.sell_city} /></td>
                 <td>{formatPrice(row.buy_price)}</td>
                 <td>{formatPrice(row.sell_price)}</td>
+                <td>{formatPrice(row.tax)} ({Math.round(row.tax_rate * 100)}%)</td>
+                <td>{formatPrice(row.net_revenue)}</td>
                 <td className={row.profit >= 0 ? styles.good : styles.bad}>{formatPrice(row.profit)}</td>
                 <td>{row.roi.toFixed(1)}%</td>
                 <td><ConfidenceBadge confidence={row.confidence} /></td>

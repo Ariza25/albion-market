@@ -62,7 +62,7 @@ export const getMarketSnapshot = (items, locations, qualities, server) =>
     },
   }).then(r => r.data);
 
-export const getMarketOpportunities = (items, locations, qualities, server, minProfit = 0) =>
+export const getMarketOpportunities = (items, locations, qualities, server, minProfit = 0, premium = true) =>
   api.get('/market/opportunities', {
     params: {
       items: items.join(','),
@@ -70,5 +70,6 @@ export const getMarketOpportunities = (items, locations, qualities, server, minP
       qualities: qualities?.join(','),
       server,
       min_profit: minProfit,
+      premium,
     },
   }).then(r => r.data);
