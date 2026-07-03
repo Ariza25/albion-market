@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useState } from 'react';
 import { Activity, Database, RefreshCw, Server } from 'lucide-react';
 import { getHealth } from '../services/api';

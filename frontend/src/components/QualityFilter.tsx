@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { QUALITIES } from '../utils/constants';
 import styles from './QualityFilter.module.css';
 

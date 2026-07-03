@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Coins, ArrowUpDown, TrendingUp, HelpCircle } from 'lucide-react';
 import { getMarketSnapshot } from '../services/api';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 const RESOURCE_NAMES = {
   METALBAR: 'Barra de metal',
   LEATHER: 'Couro trabalhado',

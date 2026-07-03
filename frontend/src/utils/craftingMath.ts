@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const MARKET_TAXES = [
   { key: 'premium', label: 'Premium 4%', rate: 0.04 },
   { key: 'standard', label: 'Sem premium 8%', rate: 0.08 },

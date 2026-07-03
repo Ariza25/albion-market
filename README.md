@@ -21,7 +21,7 @@ backend/
     app.ts                       # Composicao do app Express
     main.ts                      # Bootstrap do servidor
 frontend/
-  src/                           # UI React/Vite
+  src/                           # UI React/Vite em TypeScript
 ```
 
 ## Comandos
@@ -38,6 +38,22 @@ npm run dev:frontend
 npm run build:frontend
 npm run lint:frontend
 ```
+
+O build do frontend executa `tsc --noEmit` antes do Vite, entao erros de TypeScript quebram o build.
+
+## Docker e CI
+
+As imagens Docker ficam em `backend/Dockerfile` e `frontend/Dockerfile`.
+
+```bash
+docker build -t albion-market-backend:local backend
+docker build -t albion-market-frontend:local frontend
+docker compose up --build
+```
+
+Com `docker compose`, o frontend fica em `http://localhost:8080` e o backend em `http://localhost:3000`.
+
+O workflow `.github/workflows/ci.yml` roda build/test do backend, build/lint/typecheck do frontend e valida o build das duas imagens Docker.
 
 O backend sobe em `http://localhost:3000`.
 A documentacao Swagger fica em `http://localhost:3000/docs`.

@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: albion-market-backend:local
+    environment:
+      PORT: 3000
+      ALBION_SERVER: america
+      PERSISTENT_CACHE: "true"
+      PERSISTENT_CACHE_DIR: /app/.cache/albion-data
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: albion-market-frontend:local
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"

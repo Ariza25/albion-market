@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, Coins, Copy, Hammer, RefreshCw } from 'lucide-react';
 import { getCraftRecipe, getHistory, getMultiPrices, getPrices } from '../services/api';

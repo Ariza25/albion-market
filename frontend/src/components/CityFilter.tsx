@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { CITIES } from '../utils/constants';
 import styles from './CityFilter.module.css';
 

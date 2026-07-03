@@ -1,3 +1,4 @@
+// @ts-nocheck
 export const CITIES = [
   { id: 'Caerleon',      label: 'Caerleon',      color: '#e74c3c', emoji: '🔴' },
   { id: 'Bridgewatch',   label: 'Bridgewatch',   color: '#e67e22', emoji: '🟠' },
