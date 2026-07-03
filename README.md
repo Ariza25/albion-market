@@ -39,20 +39,6 @@ A documentacao Swagger fica em `http://localhost:3000/docs`.
 
 As variaveis do backend ficam em `backend/.env`. Use `backend/.env.example` como base.
 
-Principais variaveis:
-
-```env
-PORT=3000
-ALBION_SERVER=europe
-DEFAULT_LOCATIONS=Caerleon,Bridgewatch,Lymhurst,Fort Sterling,Thetford,Martlock,Brecilien
-PERSISTENT_CACHE=true
-PERSISTENT_CACHE_DIR=.cache/albion-data
-CACHE_TTL_PRICES=300
-CACHE_TTL_HISTORY=3600
-CACHE_TTL_GOLD=600
-CACHE_TTL_CRAFTING=86400
-```
-
 ## Endpoints Principais
 
 - `GET /health`: status do backend, cache e Albion Data.
