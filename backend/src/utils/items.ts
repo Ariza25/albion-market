@@ -99,3 +99,5 @@ function formatItem(item, lang) {
 loadItems().catch(() => {});
 
 module.exports = { searchItems, getItemById, loadItems };
+
+export {};

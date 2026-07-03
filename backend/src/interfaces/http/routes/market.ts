@@ -128,3 +128,5 @@ function mergeConfidence(a, b) {
 }
 
 module.exports = router;
+
+export {};

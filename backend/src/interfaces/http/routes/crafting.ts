@@ -43,3 +43,5 @@ router.get('/recipe/:itemId', cacheMiddleware('crafting'), async (req, res) => {
 });
 
 module.exports = router;
+
+export {};

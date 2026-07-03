@@ -4,12 +4,13 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: t
 require('dotenv').config({ quiet: true });
 
 const SERVERS = {
+  america: 'https://west.albion-online-data.com',
   europe: 'https://europe.albion-online-data.com',
   west: 'https://west.albion-online-data.com',
   east: 'https://east.albion-online-data.com',
 };
 
-const server = process.env.ALBION_SERVER || 'europe';
+const server = process.env.ALBION_SERVER || 'america';
 
 if (!SERVERS[server]) {
   throw new Error(`Invalid ALBION_SERVER: "${server}". Must be one of: ${Object.keys(SERVERS).join(', ')}`);
@@ -70,3 +71,5 @@ const config = {
 };
 
 module.exports = config;
+
+export {};

@@ -7,14 +7,19 @@ Aplicacao para consultar mercado, crafting, snapshots e oportunidades usando dad
 ```text
 backend/
   src/
-    application/services/        # Casos de uso e regras de aplicacao
+    application/repositories/    # Portas de acesso a dados externos
+    application/services/        # Servicos de dominio/aplicacao
+    application/use-cases/       # Casos de uso chamados pelos controllers
     config/                      # Configuracao e variaveis de ambiente
     infrastructure/cache/        # Cache persistente em disco
+    interfaces/http/controllers/ # Controllers HTTP
     interfaces/http/middleware/  # Middlewares HTTP
     interfaces/http/routes/      # Rotas Express
+    interfaces/http/schemas/     # Validacao de request com Zod
+    shared/                      # Erros e logger
     utils/                       # Utilitarios de catalogo/itens
-    app.js                       # Composicao do app Express
-    main.js                      # Bootstrap do servidor
+    app.ts                       # Composicao do app Express
+    main.ts                      # Bootstrap do servidor
 frontend/
   src/                           # UI React/Vite
 ```
@@ -24,7 +29,9 @@ frontend/
 ```bash
 # Backend
 npm run dev:backend
+npm run build:backend
 npm run start:backend
+npm run test:backend
 
 # Frontend
 npm run dev:frontend

@@ -7,6 +7,9 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const config = require('./config/config');
 const { getCacheStats, flushAll } = require('./interfaces/http/middleware/cache');
 const { getAlbionStatus } = require('./application/services/albionService');
+const { AppError } = require('./shared/errors/AppError');
+const { logger } = require('./shared/logger/logger');
+const { errorHandler } = require('./interfaces/http/middleware/errorHandler');
 
 const pricesRouter = require('./interfaces/http/routes/prices');
 const historyRouter = require('./interfaces/http/routes/history');
@@ -22,7 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  logger.info('request_received', { method: req.method, path: req.originalUrl });
   next();
 });
 
@@ -47,7 +50,7 @@ const swaggerOptions = {
       { name: 'System', description: 'Health check e informacoes do servico' },
     ],
   },
-  apis: [path.join(__dirname, 'interfaces/http/routes/*.js')],
+  apis: [path.join(__dirname, 'interfaces/http/routes/*.{js,ts}')],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -95,7 +98,7 @@ app.get('/health', (_req, res) => {
  */
 app.post('/cache/flush', (_req, res) => {
   flushAll();
-  console.log('[Cache] All caches flushed.');
+  logger.info('cache_flushed');
   res.json({ message: 'Cache limpo com sucesso.' });
 });
 
@@ -118,12 +121,11 @@ app.get('/api/cities', (_req, res) => {
 });
 
 app.use((_req, res) => {
-  res.status(404).json({ error: 'Rota nao encontrada.' });
+  throw new AppError(404, 'Rota nao encontrada.', 'NOT_FOUND');
 });
 
-app.use((err, _req, res, _next) => {
-  console.error('[Unhandled Error]', err);
-  res.status(500).json({ error: 'Erro interno do servidor.', detail: err.message });
-});
+app.use(errorHandler);
 
 module.exports = app;
+
+export {};

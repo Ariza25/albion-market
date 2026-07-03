@@ -16,7 +16,7 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedCities, setSelectedCities] = useState(CITY_IDS);
   const [selectedQualities, setSelectedQualities] = useState([1, 2, 3, 4, 5]);
-  const [server, setServer] = useState('europe');
+  const [server, setServer] = useState('america');
   const [activeTab, setActiveTab] = useState('prices'); // prices | craft | opportunities
 
   // Load state from localStorage on startup
@@ -64,7 +64,7 @@ export default function App() {
               className={styles.select}
             >
               <option value="europe">Europa</option>
-              <option value="west">Américas</option>
+              <option value="america">Américas</option>
               <option value="east">Ásia</option>
             </select>
           </div>

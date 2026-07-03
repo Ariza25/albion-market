@@ -65,3 +65,5 @@ function flushAll() {
 }
 
 module.exports = { cacheMiddleware, getCacheStats, flushAll };
+
+export {};

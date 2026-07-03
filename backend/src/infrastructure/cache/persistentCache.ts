@@ -5,7 +5,7 @@ const config = require('../../config/config');
 
 const cacheDir = config.persistentCache.dir;
 
-function get(cacheType, key, ttlSeconds, options = {}) {
+function get(cacheType, key, ttlSeconds, options: any = {}) {
   if (!config.persistentCache.enabled) return null;
   const file = cacheFile(cacheType, key);
   try {
@@ -57,3 +57,5 @@ function* walk(dir) {
 }
 
 module.exports = { get, set, stats };
+
+export {};

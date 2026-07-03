@@ -95,3 +95,5 @@ function parseDate(value) {
 }
 
 module.exports = { analyzeHistory };
+
+export {};

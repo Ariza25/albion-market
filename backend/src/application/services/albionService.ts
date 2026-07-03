@@ -30,6 +30,7 @@ const status = {
  */
 function resolveBaseUrl(serverOverride) {
   const servers = {
+    america: 'https://west.albion-online-data.com',
     europe: 'https://europe.albion-online-data.com',
     west: 'https://west.albion-online-data.com',
     east: 'https://east.albion-online-data.com',
@@ -69,10 +70,10 @@ function enrichPriceEntry(entry) {
  * @param {object}          options
  * @param {string[]}        [options.locations]  - City names array
  * @param {number[]}        [options.qualities]  - Quality numbers (1–5)
- * @param {string}          [options.server]     - 'europe'|'west'|'east'
+ * @param {string}          [options.server]     - 'america'|'europe'|'east'
  * @returns {Promise<object[]>}
  */
-async function getPrices(itemIds, options = {}) {
+async function getPrices(itemIds, options: any = {}) {
   const inputIds = Array.isArray(itemIds) ? itemIds : String(itemIds).split(',').filter(Boolean);
   const chunks = chunk(inputIds, config.albionApi.maxBatchItems);
   const results = [];
@@ -81,7 +82,7 @@ async function getPrices(itemIds, options = {}) {
     const locations = (options.locations || config.defaultLocations).join(',');
     const baseUrl = resolveBaseUrl(options.server);
 
-    const params = { locations };
+    const params: any = { locations };
     if (options.qualities && options.qualities.length > 0) {
       params.qualities = options.qualities.join(',');
     }
@@ -119,7 +120,7 @@ async function getPrices(itemIds, options = {}) {
  * Get prices grouped by city for easier consumption.
  * Returns: { cityName: [ priceEntries ] }
  */
-async function getPricesByCity(itemIds, options = {}) {
+async function getPricesByCity(itemIds, options: any = {}) {
   const entries = await getPrices(itemIds, options);
 
   return entries.reduce((acc, entry) => {
@@ -147,12 +148,12 @@ async function getPricesByCity(itemIds, options = {}) {
  * @param {number}          [options.timescale] - 1=hourly, 6=6h, 24=daily
  * @returns {Promise<object[]>}
  */
-async function getHistory(itemIds, options = {}) {
+async function getHistory(itemIds, options: any = {}) {
   const ids = Array.isArray(itemIds) ? itemIds.join(',') : itemIds;
   const locations = (options.locations || config.defaultLocations).join(',');
   const baseUrl = resolveBaseUrl(options.server);
 
-  const params = { locations };
+  const params: any = { locations };
   if (options.qualities && options.qualities.length > 0) params.qualities = options.qualities.join(',');
   if (options.date) params.date = options.date;
   if (options.endDate) params.end_date = options.endDate;
@@ -191,9 +192,9 @@ async function getHistory(itemIds, options = {}) {
  * @param {number} [options.count]    - Number of most recent entries
  * @returns {Promise<object[]>}
  */
-async function getGoldPrices(options = {}) {
+async function getGoldPrices(options: any = {}) {
   const baseUrl = resolveBaseUrl(options.server);
-  const params = {};
+  const params: any = {};
 
   if (options.date) params.date = options.date;
   if (options.endDate) params.end_date = options.endDate;
@@ -278,7 +279,7 @@ function confidenceScore(entry, sellAge, buyAge) {
 }
 
 function summarizePriceQuality(entries) {
-  const summary = { total: entries.length, high: 0, medium: 0, low: 0, none: 0, cached: 0 };
+  const summary: any = { total: entries.length, high: 0, medium: 0, low: 0, none: 0, cached: 0 };
   for (const entry of entries) {
     const confidence = entry.data_quality?.confidence || 'none';
     summary[confidence] = (summary[confidence] || 0) + 1;
@@ -302,3 +303,5 @@ function delay(ms) {
 }
 
 module.exports = { getPrices, getPricesByCity, getHistory, getGoldPrices, getAlbionStatus, summarizePriceQuality };
+
+export {};

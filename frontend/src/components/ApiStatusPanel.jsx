@@ -4,6 +4,7 @@ import { getHealth } from '../services/api';
 import styles from './ApiStatusPanel.module.css';
 
 const SERVER_LABELS = {
+  america: 'Americas',
   europe: 'Europa',
   west: 'Americas',
   east: 'Asia',

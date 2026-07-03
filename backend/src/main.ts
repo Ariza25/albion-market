@@ -10,3 +10,5 @@ app.listen(config.port, () => {
   console.log(`  Albion:  ${config.baseUrl}`);
   console.log('');
 });
+
+export {};
