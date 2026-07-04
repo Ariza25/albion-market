@@ -57,19 +57,6 @@ O workflow `.github/workflows/ci.yml` roda build/test do backend, build/lint/typ
 O backend sobe em `http://localhost:3000`.
 A documentacao Swagger fica em `http://localhost:3000/docs`.
 
-## Configuracao
-
-As variaveis do backend ficam em `backend/.env`. Use `backend/.env.example` como base.
-
-Para receber dados quase em tempo real do Albion Data NATS enquanto o backend estiver ligado:
-
-```env
-ALBION_NATS_ENABLED=true
-ALBION_NATS_URL=nats://public:thenewalbiondata@nats.albion-online-data.com:4222
-ALBION_NATS_TOPIC=marketorders.deduped
-```
-
-Esses dados ficam em memoria e têm prioridade sobre a REST API nos snapshots. Depois que o backend reinicia, o store local começa vazio novamente.
 
 ## Endpoints Principais
 
