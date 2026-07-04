@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const { getPrices, summarizePriceQuality } = require('../../../application/services/albionService');
+const { getLocalPriceEntries, mergeLocalPrices } = require('../../../application/services/localMarketStore');
 const config = require('../../../config/config');
 
 function parseLocations(locQuery, defaultLocations) {
@@ -34,7 +35,9 @@ router.get('/snapshot', async (req, res) => {
     const qualities = parseQualities(req.query.qualities);
     const server = req.query.server;
     const generatedAt = new Date().toISOString();
-    const prices = await getPrices(items, { locations, qualities, server });
+    const restPrices = await getPrices(items, { locations, qualities, server });
+    const localPrices = getLocalPriceEntries(items, { locations, qualities });
+    const prices = mergeLocalPrices(restPrices, localPrices);
     const snapshotId = crypto.createHash('sha1').update(JSON.stringify({ items, locations, qualities, server, generatedAt })).digest('hex').slice(0, 12);
 
     return res.json({
@@ -45,7 +48,7 @@ router.get('/snapshot', async (req, res) => {
       locations,
       qualities,
       prices,
-      data_quality: summarizePriceQuality(prices),
+      data_quality: { ...summarizePriceQuality(prices), local: localPrices.length },
     });
   } catch (err) {
     console.error('[market/snapshot]', err.message);
@@ -66,7 +69,9 @@ router.get('/opportunities', async (req, res) => {
     const minProfit = Number(req.query.min_profit || 0);
     const premium = parseBoolean(req.query.premium, true);
     const taxRate = premium ? 0.04 : 0.08;
-    const prices = await getPrices(items, { locations, qualities, server });
+    const restPrices = await getPrices(items, { locations, qualities, server });
+    const localPrices = getLocalPriceEntries(items, { locations, qualities });
+    const prices = mergeLocalPrices(restPrices, localPrices);
     const opportunities = buildBlackMarketOpportunities(prices, { minProfit, taxRate, buyLocations });
 
     return res.json({
@@ -80,7 +85,7 @@ router.get('/opportunities', async (req, res) => {
       sell_location: 'Black Market',
       qualities,
       opportunities,
-      data_quality: summarizePriceQuality(prices),
+      data_quality: { ...summarizePriceQuality(prices), local: localPrices.length },
     });
   } catch (err) {
     console.error('[market/opportunities]', err.message);
@@ -98,8 +103,8 @@ function buildBlackMarketOpportunities(prices, { minProfit, taxRate, buyLocation
 
   const rows = [];
   for (const entries of byItemQuality.values()) {
-    const buys = entries.filter((entry) => buyLocations.includes(entry.city) && entry.sell_price_min > 0);
-    const sells = entries.filter((entry) => entry.city === 'Black Market' && (entry.buy_price_max > 0 || entry.sell_price_min > 0));
+    const buys = entries.filter((entry) => buyLocations.includes(entry.city) && entry.sell_price_min > 0 && !entry.data_quality?.sell_outlier);
+    const sells = entries.filter((entry) => entry.city === 'Black Market' && (entry.buy_price_max > 0 || entry.sell_price_min > 0) && !entry.data_quality?.buy_outlier && !entry.data_quality?.sell_outlier);
     const cheapest = buys.sort((a, b) => a.sell_price_min - b.sell_price_min)[0];
     const bestSell = sells.sort((a, b) => bestExitPrice(b) - bestExitPrice(a))[0];
     if (!cheapest || !bestSell) continue;

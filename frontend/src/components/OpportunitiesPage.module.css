@@ -67,8 +67,7 @@
   text-transform: uppercase;
 }
 
-.field input,
-.fieldWide textarea {
+.field input {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -78,14 +77,68 @@
   padding: 10px 12px;
 }
 
-.fieldWide textarea {
-  resize: vertical;
-}
-
 .checkGrid {
   display: grid;
   gap: 18px;
   grid-template-columns: 1fr 1fr;
+}
+
+.selectedItems {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.selectedItemsHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selectedItemsHeader button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--gold-light);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.itemChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.itemChip {
+  align-items: flex-start;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  font-family: inherit;
+  font-weight: 800;
+  gap: 2px;
+  padding: 7px 10px;
+}
+
+.itemChip small {
+  color: var(--text-muted);
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
 }
 
 .checks {

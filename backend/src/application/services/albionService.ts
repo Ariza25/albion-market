@@ -1,20 +1,20 @@
 const axios = require('axios');
 const config = require('../../config/config');
-const persistentCache = require('../../infrastructure/cache/persistentCache');
 
 const client = axios.create({
   baseURL: config.baseUrl,
   timeout: config.albionApi.timeoutMs,
-  headers: { Accept: 'application/json' },
+  headers: {
+    Accept: 'application/json',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+  },
 });
 
 const status = {
   requests: 0,
   failures: 0,
   retries: 0,
-  cacheHits: 0,
-  cacheMisses: 0,
-  staleFallbacks: 0,
   lastSuccessAt: null,
   lastFailureAt: null,
   lastError: null,
@@ -42,13 +42,15 @@ function resolveBaseUrl(serverOverride) {
  * Enrich a raw price entry with quality label and formatted timestamps.
  */
 function enrichPriceEntry(entry) {
-  const sellAgeHours = ageHours(entry.sell_price_min_date);
-  const buyAgeHours = ageHours(entry.buy_price_max_date);
+  const sellPriceMinDate = normalizeAlbionDate(entry.sell_price_min_date);
+  const buyPriceMaxDate = normalizeAlbionDate(entry.buy_price_max_date);
+  const sellAgeHours = ageHours(sellPriceMinDate);
+  const buyAgeHours = ageHours(buyPriceMaxDate);
   return {
     ...entry,
     quality_label: config.qualityLabels[entry.quality] || 'Unknown',
-    sell_price_min_date: entry.sell_price_min_date || null,
-    buy_price_max_date: entry.buy_price_max_date || null,
+    sell_price_min_date: sellPriceMinDate,
+    buy_price_max_date: buyPriceMaxDate,
     data_quality: {
       sell_age_hours: sellAgeHours,
       buy_age_hours: buyAgeHours,
@@ -87,33 +89,10 @@ async function getPrices(itemIds, options: any = {}) {
       params.qualities = options.qualities.join(',');
     }
 
-    const key = cacheKey('prices', baseUrl, ids, params);
-    const cached = persistentCache.get('prices', key, config.cacheTtl.prices);
-    let data;
-    let source = 'albion-api';
-    let cacheAgeSeconds = 0;
-    if (cached) {
-      status.cacheHits += 1;
-      data = cached.data;
-      source = cached.source;
-      cacheAgeSeconds = cached.age_seconds;
-    } else {
-      status.cacheMisses += 1;
-      try {
-        data = await getWithRetry(`${baseUrl}/api/v2/stats/prices/${ids}.json`, { params });
-        persistentCache.set('prices', key, data);
-      } catch (err) {
-        const stale = persistentCache.get('prices', key, config.cacheTtl.prices, { allowStale: true });
-        if (!stale) throw err;
-        status.staleFallbacks += 1;
-        data = stale.data;
-        source = stale.source;
-        cacheAgeSeconds = stale.age_seconds;
-      }
-    }
-    results.push(...data.map((entry) => ({ ...enrichPriceEntry(entry), source, cache_age_seconds: cacheAgeSeconds })));
+    const data = await getWithRetry(`${baseUrl}/api/v2/stats/prices/${ids}.json`, { params });
+    results.push(...data.map((entry) => ({ ...enrichPriceEntry(entry), source: 'albion-api', cache_age_seconds: 0 })));
   }
-  return results;
+  return annotatePriceAnomalies(results);
 }
 
 /**
@@ -159,23 +138,8 @@ async function getHistory(itemIds, options: any = {}) {
   if (options.endDate) params.end_date = options.endDate;
   if (options.timescale) params.time_scale = options.timescale;
 
-  const key = cacheKey('history', baseUrl, ids, params);
-  const cached = persistentCache.get('history', key, config.cacheTtl.history);
-  if (cached) {
-    status.cacheHits += 1;
-    return addHistorySource(cached.data, cached.source, cached.age_seconds);
-  }
-  status.cacheMisses += 1;
-  try {
-    const data = await getWithRetry(`${baseUrl}/api/v2/stats/history/${ids}.json`, { params });
-    persistentCache.set('history', key, data);
-    return addHistorySource(data, 'albion-api', 0);
-  } catch (err) {
-    const stale = persistentCache.get('history', key, config.cacheTtl.history, { allowStale: true });
-    if (!stale) throw err;
-    status.staleFallbacks += 1;
-    return addHistorySource(stale.data, stale.source, stale.age_seconds);
-  }
+  const data = await getWithRetry(`${baseUrl}/api/v2/stats/history/${ids}.json`, { params });
+  return addHistorySource(data, 'albion-api', 0);
 }
 
 // ─────────────────────────────────────────────
@@ -200,23 +164,8 @@ async function getGoldPrices(options: any = {}) {
   if (options.endDate) params.end_date = options.endDate;
   if (options.count) params.count = options.count;
 
-  const key = cacheKey('gold', baseUrl, 'gold', params);
-  const cached = persistentCache.get('gold', key, config.cacheTtl.gold);
-  if (cached) {
-    status.cacheHits += 1;
-    return cached.data.map((entry) => ({ ...entry, source: cached.source, cache_age_seconds: cached.age_seconds }));
-  }
-  status.cacheMisses += 1;
-  try {
-    const data = await getWithRetry(`${baseUrl}/api/v2/stats/gold.json`, { params });
-    persistentCache.set('gold', key, data);
-    return data.map((entry) => ({ ...entry, source: 'albion-api', cache_age_seconds: 0 }));
-  } catch (err) {
-    const stale = persistentCache.get('gold', key, config.cacheTtl.gold, { allowStale: true });
-    if (!stale) throw err;
-    status.staleFallbacks += 1;
-    return stale.data.map((entry) => ({ ...entry, source: stale.source, cache_age_seconds: stale.age_seconds }));
-  }
+  const data = await getWithRetry(`${baseUrl}/api/v2/stats/gold.json`, { params });
+  return data.map((entry) => ({ ...entry, source: 'albion-api', cache_age_seconds: 0 }));
 }
 
 async function getWithRetry(url, options) {
@@ -225,7 +174,7 @@ async function getWithRetry(url, options) {
     try {
       status.requests += 1;
       if (attempt > 0) status.retries += 1;
-      const { data } = await client.get(url, options);
+      const { data } = await client.get(url, withCacheBuster(options));
       status.lastSuccessAt = new Date().toISOString();
       return data;
     } catch (err) {
@@ -239,12 +188,18 @@ async function getWithRetry(url, options) {
   throw lastError;
 }
 
-function getAlbionStatus() {
-  return { ...status, persistent_cache: persistentCache.stats() };
+function withCacheBuster(options: any = {}) {
+  return {
+    ...options,
+    params: {
+      ...(options.params || {}),
+      _: Date.now(),
+    },
+  };
 }
 
-function cacheKey(type, baseUrl, ids, params) {
-  return JSON.stringify({ type, baseUrl, ids, params });
+function getAlbionStatus() {
+  return { ...status, cache: 'disabled' };
 }
 
 function addHistorySource(data, source, cacheAgeSeconds) {
@@ -258,6 +213,14 @@ function ageHours(value) {
   return Math.max(0, Math.round((Date.now() - date.getTime()) / 36e5));
 }
 
+function normalizeAlbionDate(value) {
+  if (!value || value.startsWith('0001-01-01')) return null;
+  const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+  const date = new Date(hasTimezone ? value : `${value}Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 function qualityStatus(price, hours) {
   if (!price || price <= 0) return 'missing';
   if (hours === null) return 'unknown';
@@ -268,6 +231,7 @@ function qualityStatus(price, hours) {
 }
 
 function confidenceScore(entry, sellAge, buyAge) {
+  if (entry.data_quality?.sell_outlier || entry.data_quality?.buy_outlier) return 'low';
   const statuses = [
     qualityStatus(entry.sell_price_min, sellAge),
     qualityStatus(entry.buy_price_max, buyAge),
@@ -278,16 +242,69 @@ function confidenceScore(entry, sellAge, buyAge) {
   return 'none';
 }
 
+function annotatePriceAnomalies(entries) {
+  const byItem = new Map();
+  for (const entry of entries) {
+    if (!byItem.has(entry.item_id)) byItem.set(entry.item_id, []);
+    byItem.get(entry.item_id).push(entry);
+  }
+
+  for (const itemEntries of byItem.values()) {
+    annotateFieldOutliers(itemEntries, 'sell_price_min', 'sell_outlier');
+    annotateFieldOutliers(itemEntries, 'buy_price_max', 'buy_outlier');
+    for (const entry of itemEntries) {
+      if (entry.data_quality?.sell_outlier || entry.data_quality?.buy_outlier) {
+        entry.data_quality.confidence = confidenceScore(entry, entry.data_quality.sell_age_hours, entry.data_quality.buy_age_hours);
+      }
+    }
+  }
+
+  return entries;
+}
+
+function annotateFieldOutliers(entries, priceField, flagField) {
+  const values = entries
+    .map((entry) => Number(entry[priceField] || 0))
+    .filter((value) => value > 0)
+    .sort((a, b) => a - b);
+
+  if (values.length < 4) return;
+
+  const medianValue = median(values);
+  const q3Value = quantile(values, 0.75);
+  const threshold = Math.max(medianValue * 25, q3Value * 10, 100000);
+
+  for (const entry of entries) {
+    const value = Number(entry[priceField] || 0);
+    if (value > threshold) {
+      entry.data_quality = {
+        ...(entry.data_quality || {}),
+        [flagField]: true,
+        outlier_reason: `Preco ${value} muito acima da mediana ${Math.round(medianValue)} para este item.`,
+      };
+    }
+  }
+}
+
+function median(sortedValues) {
+  return quantile(sortedValues, 0.5);
+}
+
+function quantile(sortedValues, ratio) {
+  if (sortedValues.length === 0) return 0;
+  const index = (sortedValues.length - 1) * ratio;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sortedValues[lower];
+  return sortedValues[lower] + (sortedValues[upper] - sortedValues[lower]) * (index - lower);
+}
+
 function summarizePriceQuality(entries) {
-  const summary: any = { total: entries.length, high: 0, medium: 0, low: 0, none: 0, cached: 0 };
+  const summary: any = { total: entries.length, high: 0, medium: 0, low: 0, none: 0, suspicious: 0, cached: 0 };
   for (const entry of entries) {
     const confidence = entry.data_quality?.confidence || 'none';
     summary[confidence] = (summary[confidence] || 0) + 1;
-    if (entry.source === 'persistent-cache') summary.cached += 1;
-    if (entry.source === 'persistent-cache-stale') {
-      summary.cached += 1;
-      summary.stale_fallback = (summary.stale_fallback || 0) + 1;
-    }
+    if (entry.data_quality?.sell_outlier || entry.data_quality?.buy_outlier) summary.suspicious += 1;
   }
   return summary;
 }

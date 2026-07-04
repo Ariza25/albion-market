@@ -1,13 +1,8 @@
-import { Settings, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import GoldWidget from './GoldWidget';
 import styles from '../App.module.css';
 
-type AppHeaderProps = {
-  server: string;
-  onServerChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-};
-
-export default function AppHeader({ server, onServerChange }: AppHeaderProps) {
+export default function AppHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.logoWrap}>
@@ -20,15 +15,6 @@ export default function AppHeader({ server, onServerChange }: AppHeaderProps) {
 
       <div className={styles.headerControls}>
         <GoldWidget />
-
-        <div className={styles.selectWrapper}>
-          <Settings size={14} className={styles.selectIcon} />
-          <select id="server-select" value={server} onChange={onServerChange} className={styles.select}>
-            <option value="europe">Europa</option>
-            <option value="america">Americas</option>
-            <option value="east">Asia</option>
-          </select>
-        </div>
       </div>
     </header>
   );

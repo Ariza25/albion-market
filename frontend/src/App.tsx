@@ -26,33 +26,23 @@ export default function App() {
   const [selectedItem, setSelectedItem] = useState<AlbionItem | null>(null);
   const [selectedCities, setSelectedCities] = useState<string[]>(CITY_IDS);
   const [selectedQualities, setSelectedQualities] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [server, setServer] = useState('america');
+  const server = 'america';
   const [activeTab, setActiveTab] = useState<ActiveTab>('prices');
 
   useEffect(() => {
-    const savedServer = localStorage.getItem('albion_server');
     const params = new URLSearchParams(window.location.search);
-    const urlServer = params.get('server');
     const urlTab = params.get('tab') as ActiveTab | null;
     const urlItem = params.get('item');
 
-    if (urlServer) setServer(urlServer);
-    else if (savedServer) setServer(savedServer);
     if (urlTab === 'craft' || urlTab === 'prices' || urlTab === 'opportunities') setActiveTab(urlTab);
     if (urlItem) {
       getItem(urlItem).then(setSelectedItem).catch(() => {});
     }
   }, []);
 
-  const handleServerChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newServer = event.target.value;
-    setServer(newServer);
-    localStorage.setItem('albion_server', newServer);
-  };
-
   return (
     <div className={styles.app}>
-      <AppHeader server={server} onServerChange={handleServerChange} />
+      <AppHeader />
 
       <main className={styles.main}>
         <section className={styles.searchSection}>

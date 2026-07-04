@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { getRecipe } = require('../../../application/services/craftingService');
-const { cacheMiddleware } = require('../middleware/cache');
 
 /**
  * @swagger
@@ -29,7 +28,7 @@ const { cacheMiddleware } = require('../middleware/cache');
  *       404:
  *         description: Receita nao encontrada
  */
-router.get('/recipe/:itemId', cacheMiddleware('crafting'), async (req, res) => {
+router.get('/recipe/:itemId', async (req, res) => {
   try {
     const recipe = await getRecipe(req.params.itemId, req.query.lang || 'PT-BR');
     if (!recipe) {

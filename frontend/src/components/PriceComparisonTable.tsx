@@ -1,9 +1,11 @@
 // @ts-nocheck
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Coins, ArrowUpDown, TrendingUp, HelpCircle } from 'lucide-react';
 import { getMarketSnapshot } from '../services/api';
 import { formatPrice, formatDate, getAlbionItemIcon, getCityColor, QUALITIES } from '../utils/constants';
 import styles from './PriceComparisonTable.module.css';
+
+const AUTO_REFRESH_MS = 30000;
 
 export default function PriceComparisonTable({ item, cities, qualities, server }) {
   const [data, setData] = useState([]);
@@ -13,30 +15,38 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
   const [warning, setWarning] = useState('');
   const [sortField, setSortField] = useState('city');
   const [sortOrder, setSortOrder] = useState('asc'); // asc | desc
+  const inFlightRef = useRef(false);
 
-  const fetchMarketData = useCallback(async () => {
-    if (!item) return;
-    setLoading(true);
+  const fetchMarketData = useCallback(async ({ silent = false } = {}) => {
+    if (!item || inFlightRef.current) return;
+    inFlightRef.current = true;
+    if (!silent) setLoading(true);
     setWarning('');
     try {
       const res = await getMarketSnapshot([item.id], cities, qualities, server);
       setData(res.prices || []);
       setSnapshot({ id: res.snapshot_id, generatedAt: res.generated_at, dataQuality: res.data_quality });
-      if ((res.data_quality?.stale_fallback || 0) > 0) {
-        setWarning(`Usando cache antigo em ${res.data_quality.stale_fallback} registro(s). A Albion Data API falhou ou nao respondeu a tempo.`);
-      }
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Erro ao buscar preços:', err);
-      setWarning('Nao foi possivel gerar snapshot. Se houver cache antigo disponivel, o backend tentara usa-lo nas proximas chamadas.');
+      setWarning('Nao foi possivel gerar snapshot. A Albion Data API nao respondeu ou retornou erro.');
     } finally {
-      setLoading(false);
+      inFlightRef.current = false;
+      if (!silent) setLoading(false);
     }
   }, [cities, item, qualities, server]);
 
   useEffect(() => {
+    if (!item) return undefined;
     fetchMarketData();
-  }, [fetchMarketData]);
+    const intervalId = window.setInterval(() => {
+      fetchMarketData({ silent: true });
+    }, AUTO_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [fetchMarketData, item]);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -48,25 +58,7 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
   };
 
   const sortedData = [...data].sort((a, b) => {
-    let valA = a[sortField];
-    let valB = b[sortField];
-
-    if (sortField === 'quality') {
-      valA = a.quality;
-      valB = b.quality;
-    }
-
-    if (typeof valA === 'string') {
-      return sortOrder === 'asc' 
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA);
-    }
-
-    // Handle null/0 values for prices so they stay at the bottom
-    if (valA === 0 || valA === null) valA = sortOrder === 'asc' ? Infinity : -Infinity;
-    if (valB === 0 || valB === null) valB = sortOrder === 'asc' ? Infinity : -Infinity;
-
-    return sortOrder === 'asc' ? valA - valB : valB - valA;
+    return compareRows(a, b, sortField, sortOrder);
   });
 
   if (!item) {
@@ -94,6 +86,7 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
           </div>
         </div>
         <div className={styles.actions}>
+          <span className={styles.autoRefreshBadge}>Auto-refresh 30s</span>
           {lastUpdated && (
             <span className={styles.time}>
               Atualizado às {lastUpdated.toLocaleTimeString()}
@@ -101,7 +94,7 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
           )}
           <button 
             className={`${styles.refreshBtn} ${loading ? styles.spinning : ''}`} 
-            onClick={fetchMarketData}
+            onClick={() => fetchMarketData()}
             disabled={loading}
           >
             <RefreshCw size={16} />
@@ -176,21 +169,21 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
                     </td>
                     <td className={styles.priceCell}>
                       <Coins size={14} className={styles.silverIcon} />
-                      <span className={row.sell_price_min > 0 ? styles.priceVal : styles.emptyVal}>
+                      <span className={row.sell_price_min > 0 ? (row.data_quality?.sell_outlier ? styles.suspiciousPrice : styles.priceVal) : styles.emptyVal}>
                         {formatPrice(row.sell_price_min)}
                       </span>
                     </td>
                     <td className={styles.dateCell}>
-                      <DataAgeBadge status={row.data_quality?.sell_status} age={row.data_quality?.sell_age_hours} fallback={formatDate(row.sell_price_min_date)} />
+                      <DataAgeBadge status={row.data_quality?.sell_status} age={row.data_quality?.sell_age_hours} fallback={formatDate(row.sell_price_min_date)} outlier={row.data_quality?.sell_outlier} />
                     </td>
                     <td className={styles.priceCell}>
                       <Coins size={14} className={styles.silverIcon} />
-                      <span className={row.buy_price_max > 0 ? styles.priceVal : styles.emptyVal}>
+                      <span className={row.buy_price_max > 0 ? (row.data_quality?.buy_outlier ? styles.suspiciousPrice : styles.priceVal) : styles.emptyVal}>
                         {formatPrice(row.buy_price_max)}
                       </span>
                     </td>
                     <td className={styles.dateCell}>
-                      <DataAgeBadge status={row.data_quality?.buy_status} age={row.data_quality?.buy_age_hours} fallback={formatDate(row.buy_price_max_date)} />
+                      <DataAgeBadge status={row.data_quality?.buy_status} age={row.data_quality?.buy_age_hours} fallback={formatDate(row.buy_price_max_date)} outlier={row.data_quality?.buy_outlier} />
                     </td>
                     <td>
                       <div className={styles.confidenceWrap}>
@@ -213,7 +206,14 @@ export default function PriceComparisonTable({ item, cities, qualities, server }
   );
 }
 
-function DataAgeBadge({ status, age, fallback }) {
+function DataAgeBadge({ status, age, fallback, outlier }) {
+  if (outlier) {
+    return (
+      <span className={`${styles.ageBadge} ${styles.suspicious}`}>
+        suspeito {age !== null && age !== undefined ? `${age}h` : fallback}
+      </span>
+    );
+  }
   return (
     <span className={`${styles.ageBadge} ${styles[status] || styles.unknown}`}>
       {statusLabel(status)} {age !== null && age !== undefined ? `${age}h` : fallback}
@@ -241,7 +241,39 @@ function confidenceLabel(value) {
 }
 
 function sourceLabel(row) {
-  if (row.source === 'persistent-cache-stale') return `cache antigo ${Math.round((row.cache_age_seconds || 0) / 3600)}h`;
-  if (row.source === 'persistent-cache') return `cache ${row.cache_age_seconds || 0}s`;
-  return 'api';
+  if (row.source === 'albion-nats') return 'nats local';
+  return row.source === 'albion-api' ? 'api direta' : 'api';
+}
+
+function compareRows(a, b, field, order) {
+  const direction = order === 'asc' ? 1 : -1;
+  const valueA = sortValue(a, field);
+  const valueB = sortValue(b, field);
+
+  if (valueA.empty && valueB.empty) return 0;
+  if (valueA.empty) return 1;
+  if (valueB.empty) return -1;
+
+  if (valueA.type === 'string' || valueB.type === 'string') {
+    return String(valueA.value).localeCompare(String(valueB.value)) * direction;
+  }
+
+  return (Number(valueA.value) - Number(valueB.value)) * direction;
+}
+
+function sortValue(row, field) {
+  if (field === 'quality') return { value: row.quality, type: 'number', empty: row.quality === null || row.quality === undefined };
+  if (field.endsWith('_date')) {
+    const value = row[field];
+    const timestamp = value ? new Date(value).getTime() : Number.NaN;
+    return { value: timestamp, type: 'number', empty: !value || Number.isNaN(timestamp) };
+  }
+
+  const value = row[field];
+  const empty = value === null || value === undefined || value === '' || value === 0;
+  return {
+    value,
+    type: typeof value === 'number' ? 'number' : 'string',
+    empty,
+  };
 }

@@ -23,3 +23,10 @@ export type OpportunityRow = {
   buy_age_hours?: number | null;
   sell_age_hours?: number | null;
 };
+
+export type OpportunityItem = {
+  id: string;
+  name?: string;
+  name_pt?: string;
+  name_en?: string;
+};

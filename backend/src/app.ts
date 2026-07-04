@@ -5,8 +5,8 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const config = require('./config/config');
-const { getCacheStats, flushAll } = require('./interfaces/http/middleware/cache');
 const { getAlbionStatus } = require('./application/services/albionService');
+const { getAlbionNatsStatus } = require('./application/services/albionNatsService');
 const { AppError } = require('./shared/errors/AppError');
 const { logger } = require('./shared/logger/logger');
 const { errorHandler } = require('./interfaces/http/middleware/errorHandler');
@@ -23,6 +23,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 
 app.use((req, _res, next) => {
   logger.info('request_received', { method: req.method, path: req.originalUrl });
@@ -81,25 +88,9 @@ app.get('/health', (_req, res) => {
     server: config.server,
     base_url: config.baseUrl,
     default_locations: config.defaultLocations,
-    cache: getCacheStats(),
     albion_data: getAlbionStatus(),
+    albion_nats: getAlbionNatsStatus(),
   });
-});
-
-/**
- * @swagger
- * /cache/flush:
- *   post:
- *     summary: Limpa todos os caches do servidor
- *     tags: [System]
- *     responses:
- *       200:
- *         description: Cache limpo com sucesso
- */
-app.post('/cache/flush', (_req, res) => {
-  flushAll();
-  logger.info('cache_flushed');
-  res.json({ message: 'Cache limpo com sucesso.' });
 });
 
 /**

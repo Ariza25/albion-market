@@ -1,13 +1,17 @@
 import { CITY_IDS, QUALITIES } from '../../utils/constants';
+import SearchBar from '../SearchBar';
 import styles from '../OpportunitiesPage.module.css';
+import type { OpportunityItem } from './types';
 
 type Props = {
-  itemsText: string;
+  selectedItems: OpportunityItem[];
   cities: string[];
   qualities: number[];
   minProfit: number;
   premium: boolean;
-  onItemsTextChange: (value: string) => void;
+  onItemAdd: (item: OpportunityItem) => void;
+  onItemRemove: (itemId: string) => void;
+  onResetItems: () => void;
   onCitiesChange: (value: string[]) => void;
   onQualitiesChange: (value: number[]) => void;
   onMinProfitChange: (value: number) => void;
@@ -15,12 +19,14 @@ type Props = {
 };
 
 export default function OpportunitiesFilters({
-  itemsText,
+  selectedItems,
   cities,
   qualities,
   minProfit,
   premium,
-  onItemsTextChange,
+  onItemAdd,
+  onItemRemove,
+  onResetItems,
   onCitiesChange,
   onQualitiesChange,
   onMinProfitChange,
@@ -29,10 +35,10 @@ export default function OpportunitiesFilters({
   return (
     <>
       <div className={styles.filters}>
-        <label className={styles.fieldWide}>
-          <span>Itens</span>
-          <textarea value={itemsText} onChange={(event) => onItemsTextChange(event.target.value)} rows={3} />
-        </label>
+        <div className={styles.fieldWide}>
+          <span>Itens para avaliar</span>
+          <SearchBar onSelect={onItemAdd} />
+        </div>
         <label className={styles.field}>
           <span>Lucro minimo</span>
           <input
@@ -47,6 +53,21 @@ export default function OpportunitiesFilters({
             <input type="checkbox" checked={premium} onChange={(event) => onPremiumChange(event.target.checked)} />
             Premium ativo ({premium ? '4%' : '8%'})
           </label>
+        </div>
+      </div>
+
+      <div className={styles.selectedItems}>
+        <div className={styles.selectedItemsHeader}>
+          <strong>{selectedItems.length} itens no ranking</strong>
+          <button type="button" onClick={onResetItems}>Restaurar padrao</button>
+        </div>
+        <div className={styles.itemChips}>
+          {selectedItems.map((item) => (
+            <button key={item.id} type="button" className={styles.itemChip} onClick={() => onItemRemove(item.id)}>
+              <span>{item.name_pt || item.name_en || item.name || item.id}</span>
+              <small>{item.id}</small>
+            </button>
+          ))}
         </div>
       </div>
 

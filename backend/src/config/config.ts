@@ -48,21 +48,17 @@ const config = {
   port: parseInt(process.env.PORT, 10) || 3000,
   server,
   baseUrl: SERVERS[server],
-  cacheTtl: {
-    prices: parseInt(process.env.CACHE_TTL_PRICES, 10) || 300,
-    history: parseInt(process.env.CACHE_TTL_HISTORY, 10) || 3600,
-    gold: parseInt(process.env.CACHE_TTL_GOLD, 10) || 600,
-    crafting: parseInt(process.env.CACHE_TTL_CRAFTING, 10) || 86400,
-  },
-  persistentCache: {
-    enabled: process.env.PERSISTENT_CACHE !== 'false',
-    dir: process.env.PERSISTENT_CACHE_DIR || path.join(process.cwd(), '.cache', 'albion-data'),
-  },
   albionApi: {
     timeoutMs: parseInt(process.env.ALBION_API_TIMEOUT_MS, 10) || 15000,
     retries: parseInt(process.env.ALBION_API_RETRIES, 10) || 2,
     backoffMs: parseInt(process.env.ALBION_API_BACKOFF_MS, 10) || 350,
     maxBatchItems: parseInt(process.env.ALBION_API_MAX_BATCH_ITEMS, 10) || 80,
+  },
+  albionNats: {
+    enabled: process.env.ALBION_NATS_ENABLED === 'true',
+    url: process.env.ALBION_NATS_URL || 'nats://public:thenewalbiondata@nats.albion-online-data.com:4222',
+    topic: process.env.ALBION_NATS_TOPIC || 'marketorders.deduped',
+    maxAgeSeconds: parseInt(process.env.ALBION_NATS_MAX_AGE_SECONDS, 10) || 21600,
   },
   defaultLocations: (process.env.DEFAULT_LOCATIONS || MAIN_CITIES.join(',')).split(',').map(l => l.trim()),
   mainCities: MAIN_CITIES,

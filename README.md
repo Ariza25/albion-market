@@ -11,7 +11,6 @@ backend/
     application/services/        # Servicos de dominio/aplicacao
     application/use-cases/       # Casos de uso chamados pelos controllers
     config/                      # Configuracao e variaveis de ambiente
-    infrastructure/cache/        # Cache persistente em disco
     interfaces/http/controllers/ # Controllers HTTP
     interfaces/http/middleware/  # Middlewares HTTP
     interfaces/http/routes/      # Rotas Express
@@ -62,9 +61,19 @@ A documentacao Swagger fica em `http://localhost:3000/docs`.
 
 As variaveis do backend ficam em `backend/.env`. Use `backend/.env.example` como base.
 
+Para receber dados quase em tempo real do Albion Data NATS enquanto o backend estiver ligado:
+
+```env
+ALBION_NATS_ENABLED=true
+ALBION_NATS_URL=nats://public:thenewalbiondata@nats.albion-online-data.com:4222
+ALBION_NATS_TOPIC=marketorders.deduped
+```
+
+Esses dados ficam em memoria e têm prioridade sobre a REST API nos snapshots. Depois que o backend reinicia, o store local começa vazio novamente.
+
 ## Endpoints Principais
 
-- `GET /health`: status do backend, cache e Albion Data.
+- `GET /health`: status do backend e Albion Data.
 - `GET /api/cities`: cidades suportadas.
 - `GET /api/prices/:itemId`: precos atuais por item.
 - `GET /api/history/:itemId`: historico de precos.
